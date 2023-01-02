@@ -2,27 +2,25 @@ const express = require("express");
 const app = express();
 const { Todo } = require("./models");
 const bodyParser = require("body-parser");
-app.use(bodyParser.json());
 const path = require("path");
+const { response } = require("express");
 
+app.use(bodyParser.json());
 app.set("view engine", "ejs");
+app.use(express.static(path.join(__dirname,'public')));
 
-app.get("/", async function (request, response) {
+app.get("/", async (request, response) => {
   const allTodos = await Todo.getTodos();
-  if (request.accepts("html")) { // if the request is from a browser
+  if (request.accepts("html")) { 
     response.render('index', {
       allTodos
-    })
-  } else { // request from postman/api which just requires json
+    });
+  } else { 
     response.json({
       allTodos
     })
   }
-  response.render('index');
 });
-
-// eslint-disable-next-line no-undef
-app.use(express.static(path.join(__dirname,'public')));
 
 app.get("/todos", async function (_request, response) {
   console.log("Processing list of all Todos ...");
