@@ -1,6 +1,6 @@
+/* eslint-disable no-undef */
 "use strict";
-const { Model, where } = require("sequelize");
-const { Op } = require("sequelize");
+const { Model, Op } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class Todo extends Model {
     /**
@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
+    // eslint-disable-next-line no-unused-vars
     static associate(models) {
       // define association here
     }
@@ -16,67 +17,54 @@ module.exports = (sequelize, DataTypes) => {
       return this.create({ title: title, dueDate: dueDate, completed: false });
     }
 
-    setCompletionStatus() {
-      return this.update({
-        completed: !this.completed,
-      });
-    }
-
     static getTodos() {
-      const todos = Todo.findAll({
-        order: [["id", "ASC"]],
-      });
-      return todos;
+      return this.findAll();
     }
 
-    static getOverdueItems() {
-      const overdueItems = Todo.findAll({
-        where: {
-          dueDate: { [Op.lt]: new Date() },
-          completed: { [Op.eq]: false },
-        },
-        order: [["id", "ASC"]],
-      });
-
-      return overdueItems;
-    }
-
-    static getDueTodayItems() {
-      const dueTodayItems = Todo.findAll({
-        where: {
-          dueDate: new Date(),
-          completed: { [Op.eq]: false },
-        },
-        order: [["id", "ASC"]],
-      });
-
-      return dueTodayItems;
-    }
-
-    static getDueLaterItems() {
-      const dueLaterItems = Todo.findAll({
-        where: {
-          dueDate: { [Op.gt]: new Date() },
-          completed: { [Op.eq]: false },
-        },
-        order: [["id", "ASC"]],
-      });
-
-      return dueLaterItems;
-    }
-
-    deleteTodo() {
+    static async remove(id) {
       return this.destroy({
-        where: {
-          id: this.id,
-        },
+        where: { id },
       });
     }
 
-    static getCompletedTodos() {
+    setCompletionStatus(boolVal) {
+      return this.update({ completed: boolVal });
+    }
+
+    static async completedItems() {
       return this.findAll({
-        where: { completed: { [Op.eq]: true } },
-        order: [["id", "DESC"]],
+        where: { completed: true },
+        order: [["id", "ASC"]],
+      });
+    }
+
+    static async overDue() {
+      return this.findAll({
+        where: {
+          dueDate: { [Op.lt]: new Date().toLocaleDateString("en-CA") },
+          completed: false,
+        },
+        order: [["id", "ASC"]],
+      });
+    }
+
+    static async dueToday() {
+      return this.findAll({
+        where: {
+          dueDate: { [Op.eq]: new Date().toLocaleDateString("en-CA") },
+          completed: false,
+        },
+        order: [["id", "ASC"]],
+      });
+    }
+
+    static async dueLater() {
+      return this.findAll({
+        where: {
+          dueDate: { [Op.gt]: new Date().toLocaleDateString("en-CA") },
+          completed: false,
+        },
+        order: [["id", "ASC"]],
       });
     }
   }
