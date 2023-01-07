@@ -18,20 +18,20 @@
 
   // eslint-disable-next-line no-unused-vars
   const updateTodo = (id) => {
-    fetch(`/todos/${id}`, {
-      method: "put",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        _csrf: csrfToken,
-      }),
-    })
-      .then((res) => {
-        if (res.ok) {
-          window.location.reload();
-        }
+      fetch(`/todos/${id}`, {
+        method: "put",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          _csrf: csrfToken,
+        }),
       })
-      .catch((err) => console.error(err));
-  };
+        .then((res) => {
+          if (res.ok) {
+            window.location.reload();
+          }
+        })
+        .catch((err) => console.error(err));
+    };
 
   // eslint-disable-next-line no-unused-vars
   const deleteTodo = (id) => {
