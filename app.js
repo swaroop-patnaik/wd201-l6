@@ -1,36 +1,50 @@
 const express = require("express");
+let csrf = require("tiny-csrf");
+const path = require("path");
 const app = express();
 const { Todo } = require("./models");
 const bodyParser = require("body-parser");
-const path = require("path");
-const { response } = require("express");
+let cookieParser = require("cookie-parser");
 
+// eslint-disable-next-line no-unused-vars
+const todo = require("./models/todo");
+//app.use()
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: false }));
-app.set("view engine", "ejs");
-app.use(express.static(path.join(__dirname,'public')));
+app.use(cookieParser("shh! some secret string"));
+app.use(csrf("this_should_be_32_charactes_long", ["PUT", "POST", "DELETE"]));
 
-app.get("/", async (request, response) => {
-  const allTodos = await Todo.getTodos();
-  if (request.accepts("html")) { 
-    response.render('index', {
-      allTodos
-    });
-  } else { 
-    response.json({
-      allTodos
-    })
+// eslint-disable-next-line no-undef
+app.use(express.static(path.join(__dirname, "public")));
+app.set("view engine", "ejs");
+//app.get()
+app.get("/", async function (request, response) {
+  try {
+    const overdueItems = await Todo.getOverdueItems();
+    const dueTodayItems = await Todo.getDueTodayItems();
+    const dueLaterItems = await Todo.getDueLaterItems();
+    const completedItems = await Todo.getCompletedTodos();
+
+    if (request.accepts("html")) {
+      return response.render("index", {
+        overdueItems, dueTodayItems, dueLaterItems, completedItems, csrfToken: request.csrfToken(),
+      });
+    } else {
+      return response.json({
+      overdueItems, dueTodayItems, dueLaterItems, completedItems,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return response.status(422).json(error);
   }
 });
 
 app.get("/todos", async function (_request, response) {
-  console.log("Processing list of all Todos ...");
-  // FILL IN YOUR CODE HERE
-  // First, we have to query our PostgerSQL database using Sequelize to get list of all Todos.
-  // Then, we have to respond with all Todos
+  console.log("getting the list all Todos ...");
 
   try {
-    const todos = await Todo.findAll();
+    const todos = await Todo.getTodos();
     return response.json(todos);
   } catch (error) {
     console.log(error);
@@ -49,8 +63,9 @@ app.get("/todos/:id", async function (request, response) {
 });
 
 app.post("/todos", async function (request, response) {
+  console.log("creating new todo", request.body);
   try {
-    const todo = await Todo.addTodo(request.body);
+    await Todo.addTodo(request.body);
     //return response.json(todo);
     return response.redirect("/");
   } catch (error) {
@@ -59,10 +74,13 @@ app.post("/todos", async function (request, response) {
   }
 });
 
-app.put("/todos/:id/markAsCompleted", async function (request, response) {
+//app.put
+app.put("/todos/:id", async function (request, response) {
+  console.log("Mark Todo as completed:", request.params.id);
   const todo = await Todo.findByPk(request.params.id);
+
   try {
-    const updatedTodo = await todo.markAsCompleted();
+    const updatedTodo = await todo.setCompletionStatus();
     return response.json(updatedTodo);
   } catch (error) {
     console.log(error);
@@ -70,15 +88,21 @@ app.put("/todos/:id/markAsCompleted", async function (request, response) {
   }
 });
 
+//app.delete
 app.delete("/todos/:id", async function (request, response) {
-  console.log("We have to delete a Todo with ID: ", request.params.id);
-  // FILL IN YOUR CODE HERE
+  console.log("delete a todo with ID:", request.params.id);
 
-  // First, we have to query our database to delete a Todo by ID.
-  // Then, we have to respond back with true/false based on whether the Todo was deleted or not.
-  // response.send(true)
-  const status = await Todo.destroy({ where: { id: request.params.id } });
-  return response.send(status ? true : false);
+  const todo = await Todo.findByPk(request.params.id);
+  if (todo) {
+    try {
+      const deletedTodo = await todo.deleteTodo();
+
+      return response.send(deletedTodo ? true : false);
+    } catch (error) {
+      console.log(error);
+      return response.status(422).json(error);
+    }
+  } else return response.send(false);
 });
 
 module.exports = app;
