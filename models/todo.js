@@ -27,14 +27,9 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
 
-    setCompletionStatus(boolVal) {
-      return this.update({ completed: boolVal });
-    }
-
-    static async completedItems() {
-      return this.findAll({
-        where: { completed: true },
-        order: [["id", "ASC"]],
+    setCompletionStatus() {
+      return this.update({
+        completed: !this.completed,
       });
     }
 
